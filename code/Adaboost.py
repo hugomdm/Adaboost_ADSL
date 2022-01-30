@@ -4,13 +4,12 @@ Created on Sat Jan 29 15:55:25 2022
 
 @author: Hvins
 """
-
-import random 
-
 from sklearn.tree import DecisionTreeClassifier
 
-from math import log, e
+from math import log, exp
 
+
+import numpy as np
 from numpy.random import choice
 
 
@@ -45,7 +44,7 @@ class Adaboost():
     """
     """
     
-    def __init__(self, n_wl:int, type_wl:str):
+    def __init__(self, n_wl:int):
         """
         Initialialisation of Adaboost class
         Parameters: 
@@ -55,9 +54,6 @@ class Adaboost():
         
         
         self.T = n_wl
-        
-        self.WL = Weaklearer(type_wl)
-        
         
         self.list_WL = [] #list with model
         self.list_alpha = [] #list with weight of model 
@@ -79,28 +75,30 @@ class Adaboost():
         w_t = [1/m for x in range(X.shape[0])]        
         
         #Construction des weaklearner
-        for t in self.T:
+        for t in range(self.T):
             
            
-            X_sample, y_sample = sampling(X, y, wt)
+            X_sample, y_sample = self.sampling(X, y, w_t)
             
             #Call Weak learner
-            WL = DecisionTreeClassifier()
-            WL.fit(X_sample, y_sample, max_depth=1)
+            WL = DecisionTreeClassifier(max_depth=1)
+            WL.fit(X_sample, y_sample)
             y_pred = WL.predict(X)
             
             #Compute error of weak learner
-            error = error_wl(w_t, y_pred, y)
+            eps = self.error_wl(w_t, y_pred, y)
        
-            if error > 0.5:
+            if eps > 0.5:
                 break
             
             #Compute weight of weaklearner
-            alpha_t = 0.5 * log((1- error) / error)
+            alpha_t = 0.5 * log((1- eps) / eps)
             
             
             #Update weight
-            w_t = w_t * e(-alpha_t * y * y_pred)
+            y_temp = np.multiply(y, y_pred)
+            y_temp2 = -alpha_t * y_temp 
+            w_t = np.multiply(w_t, np.exp(y_temp2))
 
             #compute zt ????
             z_t =  sum(w_t)
@@ -108,16 +106,19 @@ class Adaboost():
             w_t = w_t / z_t
             
             
-            betat = eps/(1-eps)
+            beta_t = eps/(1-eps)
             
-            wt = wt*betat
+            w_t = w_t*beta_t
             
             
             self.list_alpha.append(alpha_t)
             self.list_WL.append(WL)
             
+            
+            
+        return 1
 
-    def predict(X):
+    def predict(self, X):
         """
         predict output of Adaboost 
         Paramters: 
@@ -129,6 +130,9 @@ class Adaboost():
         def sign(x):
             return 1 if x > 0.5 else 0 
         
+        def weight(x):
+            return np.multiply(x, self.list_alpha)
+        
         list_y_pred = []
         
         for WL in self.list_WL:
@@ -136,60 +140,68 @@ class Adaboost():
             
         arr_y_pred = np.array(list_y_pred)
         
-        arr_y_pred = arr_y_pred * self.list_alpha
+       # arr_y_pred = arr_y_pred * self.list_alpha
+        
+        arr_y_pred = np.apply_along_axis(weight, 0, arr_y_pred)
+    
 
         y_pred = np.sum(arr_y_pred, axis=0)
-        
-        y_pred = npp.apply_along_axis(sign 1, y_pred )
+        y_pred = np.reshape(y_pred, (y_pred.shape[0],1))
+        y_pred = np.apply_along_axis(sign, 1, y_pred )
         
         return y_pred
         
             
         
-    def error_wl(wt, y_pred, y):
+    def error_wl(self, w_t, y_pred, y):
         """
         error of current weaklearner
         Parameters:
-            wt: array:  weight of observation
+            w_t: array:  weight of observation
             y_pred: array: output of wl 
             y: array: labels
         Return: 
-            err_wl: float: error of wl 
+            eps: float: error of wl 
         """
         
         ind_err = []
-        for i in y_pred.shape[0]:
-            if y_pred[i] != y[i]
+        for i in range(y_pred.shape[0]):
+            if y_pred[i] != y[i]:
                 ind_err.append(1) 
             else: 
                 ind_err.append(0) 
     
-        w_ind_err = wt*ind_err
+        w_ind_err = np.multiply(w_t,ind_err)
         
-        error = sum(w_ind_err)
+        eps = np.sum(w_ind_err)
     
-        return error
+        return eps
     
         
-    def sampling(X, y, wt):
+    def sampling(self, X, y, w_t):
         """
-        sampling X with wt 
+        sampling X with w_t 
         Parameters:
             X: array: data
             y: array: labels
-            wt: array: weigth
+            w_t: array: weigth
         Return:
             X_sample: array: sample of X
             y_sample: array: labels corresponding to X_sample
         """
         #put X and y in same array to sample 
-        data = np.append(X, y, axis=1)
-        
+        y_temp = np.reshape(y, (y.shape[0], 1))
+
+        data = np.hstack((X, y_temp))
+    
         #size of sample
         size = int(0.75*X.shape[0])
         
         #sample
-        sample = choice(data, size, wt)
+        #sample = choice(data, size, w_t)
+        ch = choice([x for x in range(data.shape[0])], size, [1 for x in range(data.shape[0])])
+        
+        sample = data[ch,:]
         
         y_sample = sample[:,-1]
         X_sample = sample[:,:-1]
