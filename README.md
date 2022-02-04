@@ -16,4 +16,4 @@ I did a code for Multiclass Adaboost (still need to check if it is exactly the s
 I also cleaned and changed somethings in Hugos binary code. 
 Its necessary to doublecheck if these both codes are properly and if they make sense compared to the codes in the articles. 
 
-Next: Comparing with other algorithms and choose a dataset. 
+Next: Started comparing with other algorithms but not finished and choose a dataset. 
