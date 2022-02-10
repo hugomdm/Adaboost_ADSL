@@ -15,5 +15,5 @@ Status:
 I did a code for Multiclass Adaboost (still need to check if it is exactly the same as the article) from Hugo's binary code. 
 I also cleaned and changed somethings in Hugos binary code. 
 Its necessary to doublecheck if these both codes are properly and if they make sense compared to the codes in the articles. 
-
-Next: Started comparing with other algorithms but not finished and choose a dataset. 
+Chose a binary dataset.
+Next: Started comparing with other algorithms but not finished and missing chosing a multiclass  dataset. 
