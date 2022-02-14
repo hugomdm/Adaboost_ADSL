@@ -1,63 +1,26 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Jan 29 15:55:25 2022
+#------------------------------- BINARY CLASSIFICATIONS ---------------------- #
 
-@author: Hvins
-"""
+import numpy as np 
+
 from sklearn.tree import DecisionTreeClassifier
 
-from math import log, exp
 
 
-import numpy as np
-from numpy.random import choice
-
-
-
-# Algo Adaboost: 
-
-# Fit :     
-# Pour chaque arbre : 
-    
-#     Calculer y_pred avec un weak learner
-    
-#     Calculer l'erreur global du wl 
-    
-#     Calculer son poids dans le vote final 
-    
-#     Calculer les nouveaux poids des X 
-    
-#     Normaliser les poids 
-    
-    
-# Predict:
-    
-#     Calculer y_pred pour chaque arbre 
-    
-#     pondérer la décision 
-
-            
-                            
-    
-
-class Adaboost():
+class BinaryClassAdaboost():
     """
     """
     
-    def __init__(self, n_wl:int):
+    def __init__(self, n_estimators:int):
         """
         Initialialisation of Adaboost class
         Parameters: 
-            n_wl: int:  count of weaklearner
-            type_wl: str: type of weaklearner choosen 
+            n_estimators: int:  number of weak learners 
         """
-        
-        
-        self.T = n_wl
-        
+        self.n_estimators = n_estimators
         self.list_WL = [] #list with model
         self.list_alpha = [] #list with weight of model 
-        
+        self.estimator_errors = []
+        self.w = []
         
         
     def fit(self, X, y):
@@ -65,58 +28,69 @@ class Adaboost():
         Fit model 
         Parameters: 
             X: array: data
-            y: array: vector of class labels where yi E Y= {1,..., k}
+            y: array: vector of class labels where yi E Y= {1,..., k} and k = 2
         """
+        ## Step 1: Initialize the weights to a constant
+        n_samples = X.shape[0]      
         self.list_WL = [] 
-        self.list_alpha = []
-        ##Initialize weight: 
-        m = y.shape[0]                
-        w = []
-        w_t = [1/m for x in range(X.shape[0])]        
+        self.list_alpha = [] 
+        self.estimator_errors = []          
+        self.w = []
+        ##Weights are initialized to 1/Number of samples: 
+        w_t = np.array([1/n_samples for x in range(n_samples)])
         
+        ## Step 2: Classify with ramdom sampling of data using a weak learner
         #Construction des weaklearner
-        for t in range(self.T):
+        
+        #for each weak learner
+        for t in range(self.n_estimators):
+
+            #Choose and Call the Base/Weak learner
             
-           
-            X_sample, y_sample = self.sampling(X, y, w_t)
+            X_sample, y_sample, w_t_sample = self.sampling(X, y, w_t)
             
-            #Call Weak learner
+            
+            #A decision tree with one depth has one node and is called a stump or weak learner
             WL = DecisionTreeClassifier(max_depth=1)
-            WL.fit(X_sample, y_sample)
+            #Fit the stump model with the ramdom samples
+            WL.fit(X_sample, y_sample) #, sample_weight=w_t_sample
+            #Get the predicted classes
             y_pred = WL.predict(X)
             
-            #Compute error of weak learner
+            ##Step 3: Compute error of weak learner
             eps = self.error_wl(w_t, y_pred, y)
-       
+        
+            # if the error of the weak learner is higher then 0.5 (worse then random guess) 
+            #don't take into account this learner weight
             if eps > 0.5:
                 break
             
-            #Compute weight of weaklearner
-            alpha_t = 0.5 * log((1- eps) / eps)
+            #Step 4: Calculate the performance of the weak learner
+            #Performance of the weak learner(α) = 0.5* ln (1 – error/error)
+            #Calculate alpha for this weak learner
             
+            alpha_t = 0.5 * np.log((1- eps) / eps)
             
-            #Update weight
+
+            #Step 5: Update weight
+            #With the alpha performance (α) the weights of the wrongly classified records are increased
+            #and the weights of the correctly classified records decreased.
             y_temp = np.multiply(y, y_pred)
             y_temp2 = -alpha_t * y_temp 
-            w_t = np.multiply(w_t, np.exp(y_temp2))
+            normalized_w_t = np.multiply(w_t, np.exp(y_temp2))
 
-            #compute zt ????
-            z_t =  sum(w_t)
+            #normalizing the weigths for the sum to be equal do 1
+            w_t = normalized_w_t / sum(normalized_w_t)
             
-            w_t = w_t / z_t
-            
-            
-            beta_t = eps/(1-eps)
-            
-            w_t = w_t*beta_t
-            
-            
+            #store the alpha performance of each weak learner
             self.list_alpha.append(alpha_t)
+            #store each weak learner
             self.list_WL.append(WL)
+            self.estimator_errors.append(eps)
+
             
             
-            
-        return 1
+        return self
 
     def predict(self, X):
         """
@@ -126,32 +100,23 @@ class Adaboost():
         Return: 
             y_pred: array: data
         """
-        
-        def sign(x):
-            return 1 if x > 0.5 else 0 
-        
-        def weight(x):
-            return np.multiply(x, self.list_alpha)
-        
+        #The final prediction is a compromise between all the weak learners predictions
         list_y_pred = []
         
-        for WL in self.list_WL:
-            list_y_pred.append(WL.predict(X))
-            
-        arr_y_pred = np.array(list_y_pred)
-        
-       # arr_y_pred = arr_y_pred * self.list_alpha
-        
-        arr_y_pred = np.apply_along_axis(weight, 0, arr_y_pred)
-    
+        #for each weak learner get their prediction
 
-        y_pred = np.sum(arr_y_pred, axis=0)
-        y_pred = np.reshape(y_pred, (y_pred.shape[0],1))
-        y_pred = np.apply_along_axis(sign, 1, y_pred )
+        for WL, w in zip(self.list_WL, self.list_alpha):
+            #Final prediction is obtained by the weighted by alpha sum of each weak learner prediction
+            list_y_pred.append(WL.predict(X) * w)
+         
+        #the array of all the predictions
+
+        arr_y_pred = np.array(sum(list_y_pred))
+ 
+        #get -1 if y_pred < 0 or 1 if y_pred > 0
+        y_pred = np.sign(arr_y_pred)
         
-        return y_pred
-        
-            
+        return y_pred 
         
     def error_wl(self, w_t, y_pred, y):
         """
@@ -177,7 +142,6 @@ class Adaboost():
     
         return eps
     
-        
     def sampling(self, X, y, w_t):
         """
         sampling X with w_t 
@@ -191,47 +155,33 @@ class Adaboost():
         """
         #put X and y in same array to sample 
         y_temp = np.reshape(y, (y.shape[0], 1))
-
         data = np.hstack((X, y_temp))
-    
+        
+        w_t_temp = np.reshape(w_t, (w_t.shape[0], 1))
+        data = np.hstack((data,w_t_temp))
+        
         #size of sample
         size = int(0.75*X.shape[0])
         
         #sample
         #sample = choice(data, size, w_t)
-        ch = choice([x for x in range(data.shape[0])], size, [1 for x in range(data.shape[0])])
+        ch = np.random.choice([x for x in range(data.shape[0])], size, [1 for x in range(data.shape[0])])
         
         sample = data[ch,:]
         
-        y_sample = sample[:,-1]
-        X_sample = sample[:,:-1]
+        w_t_sample = sample[:,-1]
+        y_sample = sample[:,-2]
+        X_sample = sample[:,:-2]
         
-        return X_sample, y_sample
-        
-            
-            
-        
-        
+        return X_sample, y_sample, w_t_sample
       
-        
-        
-        
-        
-        
-        
-        
-        
-
-        
-
-            
-            
-            
-            
-            
     
-            
-            
-            
-            
     
+    def metrics_adaboost(self,y, y_pred):
+        """
+        """
+        accuracy = np.sum([1 if y[i] == y_pred[i] else 0 for i in range(y.shape[0])])/ y.shape[0]
+        
+        #error = 1 - np.sum((y - y_pred)**2)/y.shape[0]
+        
+        return accuracy
