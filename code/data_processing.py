@@ -7,7 +7,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from sklearn.datasets import load_iris
-
+import plotly.express as px
 #----------- external imports 
 
 
@@ -36,15 +36,16 @@ def split_data(data_type:str):
         ax.set_xlabel('Heart Disease')
         plt.savefig('../img/dist_heart.png')
 
-        features = data.loc[:, :'ST_Slope']
+        features = df_heart.loc[:, :'ST_Slope']
         tsne = TSNE(n_components=2, random_state=0)
         projections = tsne.fit_transform(features)
 
         fig = px.scatter(
             projections, x=0, y=1,
-            color=data.HeartDisease, labels={'color': 'HeartDisease'}
+            color=df_heart.HeartDisease, labels={'color': 'HeartDisease'}
         )
-        fig.savefig('../img/tnse_heart.png')
+        fig.write_image("../img/tnse_heart.png")
+
 
         X = df_heart.drop('HeartDisease', axis=1)
         y = df_heart['HeartDisease']

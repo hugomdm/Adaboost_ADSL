@@ -32,30 +32,39 @@ X, y = data_processing.split_data(args.data)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
 
 if args.data == 'binary': 
-    ada = Adaboost.BinaryClassAdaboost(50)
+    ada = Adaboost.BinaryClassAdaboost(100)
 
 if args.data == 'multiclass': 
-    ada = Adaboost.MultiClassAdaBoost(50)
+    ada = Adaboost.MultiClassAdaBoost(100)
     
-print(X_train)
 
 ada.fit(X_train, y_train)
 y_pred = ada.predict(X_test)
-print(y_pred)
 
+plt.figure(figsize=(8,6))
 plt.errorbar(list(range(0, len(ada.estimator_errors))), ada.estimator_errors)
-plt.show()
+plt.savefig('../img/my_ada_error_'+str(args.data)+'.png')
 
-estimator = AdaBoostClassifier()
+estimator = AdaBoostClassifier(n_estimators=100)
 estimator.fit(X_train, y_train)
 y_pred = estimator.predict(X_test)
-plt.errorbar(list(range(0, len(estimator.estimator_errors_ ))), estimator.estimator_errors_ )
-plt.show()
 
-len(ada.estimator_errors)
+plt.figure(figsize=(8,6))
+plt.errorbar(list(range(0, len(estimator.estimator_errors_ ))), estimator.estimator_errors_ )
+plt.savefig('../img/ada_error_'+str(args.data)+'.png')
+
 error = accuracy_score(y_test, y_pred)
 print(error)
 
 
 results = models_evaluation.models_comparision(args.data, X, y, folds = 10)
 print(results)
+
+print("---------------- Testing different max depth parameters ---------------- ")
+value = models_evaluation.changing_parameter_max_depth(args.data, X, y)
+print("Best max_depth value is : " + str(value))
+
+print("---------------- Testing different number of estimators ---------------- ")
+
+value = models_evaluation.changing_parameter_estimators(args.data, X, y)
+print("Best number of estimator is : " + str(value))

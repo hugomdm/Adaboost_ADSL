@@ -10,13 +10,14 @@ class BinaryClassAdaboost():
     """
     """
     
-    def __init__(self, n_estimators:int):
+    def __init__(self, n_estimators:int = 50, max_depth:int = 1):
         """
         Initialialisation of Adaboost class
         Parameters: 
             n_estimators: int:  number of weak learners 
         """
         self.n_estimators = n_estimators
+        self.max_depth = max_depth
         self.list_WL = [] #list with model
         self.list_alpha = [] #list with weight of model 
         self.estimator_errors = []
@@ -50,7 +51,7 @@ class BinaryClassAdaboost():
 
             #Choose and Call the Base/Weak learner
             #A decision tree with one depth has one node and is called a stump or weak learner
-            WL = DecisionTreeClassifier(max_depth=1)
+            WL = DecisionTreeClassifier(max_depth=self.max_depth)
             #Fit the stump model with the ramdom samples
             WL.fit(X_sample, y_sample) 
             #Get the predicted classes
@@ -172,7 +173,8 @@ class BinaryClassAdaboost():
     def get_params(self, deep=True):
         '''
         '''
-        return {'n_estimators': self.n_estimators}
+        return {'n_estimators': self.n_estimators, 
+        'max_depth': self.max_depth}
 
     def set_params(self, **parameters):
         '''
@@ -190,12 +192,13 @@ class MultiClassAdaBoost():
     """
     """
 
-    def __init__(self, n_estimators: int):
+    def __init__(self, n_estimators: int = 50, max_depth:int = 1):
         """
         Parameters:
             n_estimators: int: number of Weak Learner member of vote
         """
         self.n_estimators = n_estimators
+        self.max_depth = max_depth
         self.list_WL = [] #list with model
         self.list_beta = [] #list with weight of model 
         self.estimator_errors = []
@@ -233,7 +236,7 @@ class MultiClassAdaBoost():
             
             #Choose and Call the Base/Weak learner
             #A decision tree with one depth has one node and is called a stump or weak learner
-            WL = DecisionTreeClassifier(max_depth=1)
+            WL = DecisionTreeClassifier(max_depth=self.max_depth)
             #Fit the stump model with the ramdom samples
             WL.fit(X_sample, y_sample)
             y_pred = WL.predict(X)
@@ -324,7 +327,8 @@ class MultiClassAdaBoost():
     def get_params(self, deep=True):
         """
         """
-        return {'n_estimators': self.n_estimators}
+        return {'n_estimators': self.n_estimators, 
+        'max_depth': self.max_depth}
 
 
     def set_params(self, **parameters):
