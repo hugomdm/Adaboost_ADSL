@@ -15,7 +15,6 @@ class BinaryClassAdaboost():
         Initialialisation of Adaboost class
         Parameters: 
             n_estimators: int:  number of weak learners 
-            size: int: size de l'échantillon
         """
         self.n_estimators = n_estimators
         self.list_WL = [] #list with model
@@ -46,14 +45,14 @@ class BinaryClassAdaboost():
         #for each weak learner
         for t in range(self.n_estimators):
 
+            #Sample of X
+            X_sample, y_sample = BinaryClassAdaboost.sampling(X, y, w_t)                    
+
             #Choose and Call the Base/Weak learner
-            
-            X_sample, y_sample = self.sampling(X, y, w_t)          
-            
             #A decision tree with one depth has one node and is called a stump or weak learner
             WL = DecisionTreeClassifier(max_depth=1)
             #Fit the stump model with the ramdom samples
-            WL.fit(X_sample, y_sample) #, sample_weight=w_t_sample
+            WL.fit(X_sample, y_sample) 
             #Get the predicted classes
             y_pred = WL.predict(X)
             
@@ -95,7 +94,7 @@ class BinaryClassAdaboost():
         Paramters: 
             X: array: data
         Return: 
-            y_pred: array: data
+            y_pred: array: prediction of Adaboost 
         """
         #The final prediction is a compromise between all the weak learners predictions
         list_y_pred = []
@@ -139,7 +138,7 @@ class BinaryClassAdaboost():
     
         return eps
     
-    def sampling(self, X, y, w_t):
+    def sampling( X, y, w_t):
         """
         sampling X with w_t 
         Parameters:
@@ -167,10 +166,17 @@ class BinaryClassAdaboost():
         X_sample = sample[:,:-1]
         
         return X_sample, y_sample
+    
+    
+    ## Function to use cross_validate of sklearn
     def get_params(self, deep=True):
+        '''
+        '''
         return {'n_estimators': self.n_estimators}
 
     def set_params(self, **parameters):
+        '''
+        '''
         for parameter, value in parameters.items():
             setattr(self, parameter, value)
         return self
@@ -180,38 +186,31 @@ class BinaryClassAdaboost():
 #-------------------------------Multiclass LASSIFICATIONS ---------------------- #
 
 
-class MultiClassAdaBoost(object):
-    '''
-    Parameters
-    -----------
-    base_estimator: object
-        The base model from which the boosted ensemble is built.
-    n_estimators: integer, optional(default=50)
-        The maximum number of estimators
-    learning_rate: float, optional(default=1)
-    Attributes
-    -------------
-    estimators_: list of base estimators
-    estimator_weights_: array of floats
-        Weights for each base_estimator
-    estimator_errors_: array of floats
-        Classification error for each estimator in the boosted ensemble.
-    '''
+class MultiClassAdaBoost():
+    """
+    """
 
-    def __init__(self, n_estimators, learning_rate):
+    def __init__(self, n_estimators: int):
+        """
+        Parameters:
+            n_estimators: int: number of Weak Learner member of vote
+        """
         self.n_estimators = n_estimators
         self.list_WL = [] #list with model
-        self.list_alpha = [] #list with weight of model 
-        self.learning_rate_ = learning_rate
+        self.list_beta = [] #list with weight of model 
         self.estimator_errors = []
         self.w = []
 
     def fit(self, X, y):
-        
+        """
+        Parameters:
+            X: array: data
+            y: array: class
+        """
         ## Step 1: Initialize the weights to a constant
         n_samples = X.shape[0]                
         self.list_WL = [] #list with model
-        self.list_alpha = [] #list with weight of model 
+        self.list_beta = [] #list with weight of model 
         self.estimator_errors = []
         self.w = []
 
@@ -219,8 +218,8 @@ class MultiClassAdaBoost(object):
         w_t = np.array([1/n_samples for x in range(n_samples)])
         
         # So in boost we have to ensure that the predict results have the same classes sort
-        self.classes_ = np.array(sorted(list(set(y))))
-        self.n_classes_ = len(self.classes_)
+        self.K = np.sort(np.unique(np.array(y)))
+        self.n_K = len(self.K)
         
         
         ## Step 2: Classify with ramdom sampling of data using a weak learner
@@ -228,58 +227,110 @@ class MultiClassAdaBoost(object):
         
         #for each weak learner
         for t in range(self.n_estimators):
-          
+            
+            #Do a sample of data to train WL
+            X_sample, y_sample = MultiClassAdaBoost.sampling(X, y, w_t)   
+            
             #Choose and Call the Base/Weak learner
             #A decision tree with one depth has one node and is called a stump or weak learner
             WL = DecisionTreeClassifier(max_depth=1)
             #Fit the stump model with the ramdom samples
-            WL.fit(X, y, sample_weight=w_t)
-            
+            WL.fit(X_sample, y_sample)
             y_pred = WL.predict(X)
             
             ##Step 3: Compute error of weak learner
             incorrect = y_pred != y
-            estimator_error = np.dot(incorrect, w_t) / np.sum(w_t, axis=0)
-            
+            index = np.where(incorrect)
+            eps = sum(w_t[index])
             # if worse than random guess, stop boosting
-            if estimator_error >= 1 - 1 / self.n_classes_:
+            if eps > 1/2:
                 break
+            
+            #Compute beta_t the weight of weak learner
+            beta_t = eps/(1 - eps)
 
-            # update alphe performance
-            alpha_t = self.learning_rate_ * np.log((1 - estimator_error) / estimator_error) + np.log(
-            self.n_classes_ - 1)
-        
+            w_t_temp = np.array([w_t[i] if incorrect[i] else w_t[i]*beta_t for i in range(w_t.shape[0])])
+            w_t = w_t_temp / sum(w_t_temp)
 
-            # update sample weight
-            w_t *= np.exp(alpha_t * incorrect)
-            sample_weight_sum = np.sum(w_t, axis=0)
-
-            # normalize sample weight
-            w_t /= sample_weight_sum
             
             #store the alpha performance of each weak learner
-            self.list_alpha.append(alpha_t)
+            self.list_beta.append(beta_t)
             #store each weak learner
             self.list_WL.append(WL)
             # append error
-            self.estimator_errors.append(estimator_error)
+            self.estimator_errors.append(eps)
+
 
         return self
 
 
+
     def predict(self, X):
-        n_classes = self.n_classes_
-        classes = self.classes_[:, np.newaxis]
-
+        """
+        Parameters: 
+            X: array: data
+        returns:
+            y_pred: array: prediction of Adaboost
+        """
+        #initialise matrix of score row: nrow of X, col: count of class 
+        #score will be the sum of 1/beta_t when a class is predicr by WL
+        y_pred_score = np.zeros((X.shape[0], self.n_K))
         
-        pred = sum((estimator.predict(X) == classes).T * w
-                   for estimator, w in zip(self.list_WL,
-                                           self.list_alpha))
+        #For each WL
+        for beta_t, WL in zip(self.list_beta, self.list_WL):
+            #Predict of WL
+            y_pred_t = WL.predict(X)
+            #For each id
+            for e, y_pred_t_i in enumerate(y_pred_t):
+                #we increase the y_predict columns by log(1/beta_t)
+                y_pred_score[e, int(y_pred_t_i)] += np.log(1/beta_t)
+        
+        #We get for each id the number of column with max value 
+        y_pred = np.argmax(y_pred_score, axis=1)
+            
+        return y_pred #, y_pred_score
+    
+    
+    def sampling( X, y, w_t):
+        """
+        sampling X with w_t 
+        Parameters:
+            X: array: data
+            y: array: labels
+            w_t: array: weigth
+        Return:
+            X_sample: array: sample of X
+            y_sample: array: labels corresponding to X_sample
+        """
+        #put X and y in same array to sample 
+        y_temp = np.reshape(y, (y.shape[0], 1))
+        data = np.hstack((X, y_temp))
+        
+        #size of sample
+        size = int(0.75*X.shape[0])
+                
+        #get index of data kept
+        ch = np.random.choice([x for x in range(data.shape[0])], size=size, p=w_t)
+        
+        sample = data[ch,:]
+        
+    
+        y_sample = sample[:,-1]
+        X_sample = sample[:,:-1]
+        
+        return X_sample, y_sample
+    
+    ## Function to use cross_validate of sklearn
+    def get_params(self, deep=True):
+        """
+        """
+        return {'n_estimators': self.n_estimators}
 
-        pred /= sum(self.list_alpha)
-        if n_classes == 2:
-            pred[:, 0] *= -1
-            pred = pred.sum(axis=1)
-            return self.classes_.take(pred > 0, axis=0)
 
-        return self.classes_.take(np.argmax(pred, axis=1), axis=0)
+    def set_params(self, **parameters):
+        """
+        """
+        for parameter, value in parameters.items():
+            setattr(self, parameter, value)
+        
+        return self
