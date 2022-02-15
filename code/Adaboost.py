@@ -162,7 +162,7 @@ class BinaryClassAdaboost():
                 
         #sample
         #sample = choice(data, size, w_t)
-        ch = np.random.choice([x for x in range(data.shape[0])], size=self.size, p=w_t)
+        ch = np.random.choice([x for x in range(data.shape[0])], size=size, p=w_t)
         
         sample = data[ch,:]
         
