@@ -10,7 +10,7 @@ class BinaryClassAdaboost():
     """
     """
     
-    def __init__(self, n_estimators:int, size:int):
+    def __init__(self, n_estimators:int):
         """
         Initialialisation of Adaboost class
         Parameters: 
@@ -21,8 +21,7 @@ class BinaryClassAdaboost():
         self.list_WL = [] #list with model
         self.list_alpha = [] #list with weight of model 
         self.estimator_errors = []
-        self.size = size
-        
+
         
     def fit(self, X, y):
         """
@@ -86,10 +85,9 @@ class BinaryClassAdaboost():
             #store each weak learner
             self.list_WL.append(WL)
             self.estimator_errors.append(eps)
-
-            
-            
+   
         return self
+
 
     def predict(self, X):
         """
@@ -160,8 +158,8 @@ class BinaryClassAdaboost():
         data = np.hstack((data,w_t_temp))
         
         #size of sample
-        self.size = int(0.75*X.shape[0])
-        
+        size = int(0.75*X.shape[0])
+                
         #sample
         #sample = choice(data, size, w_t)
         ch = np.random.choice([x for x in range(data.shape[0])], size=self.size, p=w_t)
