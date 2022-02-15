@@ -154,14 +154,10 @@ class BinaryClassAdaboost():
         y_temp = np.reshape(y, (y.shape[0], 1))
         data = np.hstack((X, y_temp))
         
-        w_t_temp = np.reshape(w_t, (w_t.shape[0], 1))
-        data = np.hstack((data,w_t_temp))
-        
         #size of sample
         size = int(0.75*X.shape[0])
                 
-        #sample
-        #sample = choice(data, size, w_t)
+        #get index of data kept
         ch = np.random.choice([x for x in range(data.shape[0])], size=size, p=w_t)
         
         sample = data[ch,:]
