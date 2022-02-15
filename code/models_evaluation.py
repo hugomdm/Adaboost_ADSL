@@ -13,7 +13,7 @@ from sklearn.naive_bayes import GaussianNB
 import Adaboost
 
 # Define the models evaluation function
-def models_evaluation(data_type:str, X, y, folds):
+def models_comparision(data_type:str, X, y, folds):
     
     '''
     X : data set features
@@ -28,11 +28,11 @@ def models_evaluation(data_type:str, X, y, folds):
     dtr_model = DecisionTreeClassifier()
     rfc_model = RandomForestClassifier()
     gnb_model = GaussianNB()
-    ada_model = AdaBoostClassifier(DecisionTreeClassifier(max_depth=4))
+    ada_model = AdaBoostClassifier()
     if data_type == 'binary': 
-        my_ada_model = Adaboost.BinaryClassAdaboost(100)
+        my_ada_model = Adaboost.BinaryClassAdaboost(50)
     if data_type == 'multiclass': 
-        my_ada_model = Adaboost.MultiClassAdaboost(100)
+        my_ada_model = Adaboost.MultiClassAdaBoost(50)
 
     # Perform cross-validation to each machine learning classifier
     log = cross_validate(log_model, X, y, cv=folds, scoring=scores)
