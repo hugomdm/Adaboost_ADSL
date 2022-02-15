@@ -10,17 +10,18 @@ class BinaryClassAdaboost():
     """
     """
     
-    def __init__(self, n_estimators:int):
+    def __init__(self, n_estimators:int, size:int):
         """
         Initialialisation of Adaboost class
         Parameters: 
             n_estimators: int:  number of weak learners 
+            size: int: size de l'échantillon
         """
         self.n_estimators = n_estimators
         self.list_WL = [] #list with model
         self.list_alpha = [] #list with weight of model 
         self.estimator_errors = []
-        self.w = []
+        self.size = size
         
         
     def fit(self, X, y):
@@ -35,7 +36,8 @@ class BinaryClassAdaboost():
         self.list_WL = [] 
         self.list_alpha = [] 
         self.estimator_errors = []          
-        self.w = []
+    
+    
         ##Weights are initialized to 1/Number of samples: 
         w_t = np.array([1/n_samples for x in range(n_samples)])
         
@@ -47,8 +49,7 @@ class BinaryClassAdaboost():
 
             #Choose and Call the Base/Weak learner
             
-            X_sample, y_sample, w_t_sample = self.sampling(X, y, w_t)
-            
+            X_sample, y_sample = self.sampling(X, y, w_t)          
             
             #A decision tree with one depth has one node and is called a stump or weak learner
             WL = DecisionTreeClassifier(max_depth=1)
@@ -58,7 +59,7 @@ class BinaryClassAdaboost():
             y_pred = WL.predict(X)
             
             ##Step 3: Compute error of weak learner
-            eps = self.error_wl(w_t, y_pred, y)
+            eps = BinaryClassAdaboost.error_wl(w_t, y_pred, y)
         
             # if the error of the weak learner is higher then 0.5 (worse then random guess) 
             #don't take into account this learner weight
@@ -68,16 +69,14 @@ class BinaryClassAdaboost():
             #Step 4: Calculate the performance of the weak learner
             #Performance of the weak learner(α) = 0.5* ln (1 – error/error)
             #Calculate alpha for this weak learner
-            
             alpha_t = 0.5 * np.log((1- eps) / eps)
             
 
             #Step 5: Update weight
             #With the alpha performance (α) the weights of the wrongly classified records are increased
             #and the weights of the correctly classified records decreased.
-            y_temp = np.multiply(y, y_pred)
-            y_temp2 = -alpha_t * y_temp 
-            normalized_w_t = np.multiply(w_t, np.exp(y_temp2))
+            y_temp = -alpha_t * np.multiply(y, y_pred) 
+            normalized_w_t = np.multiply(w_t, np.exp(y_temp))
 
             #normalizing the weigths for the sum to be equal do 1
             w_t = normalized_w_t / sum(normalized_w_t)
@@ -118,7 +117,7 @@ class BinaryClassAdaboost():
         
         return y_pred 
         
-    def error_wl(self, w_t, y_pred, y):
+    def error_wl(w_t, y_pred, y):
         """
         error of current weaklearner
         Parameters:
@@ -161,27 +160,124 @@ class BinaryClassAdaboost():
         data = np.hstack((data,w_t_temp))
         
         #size of sample
-        size = int(0.75*X.shape[0])
+        self.size = int(0.75*X.shape[0])
         
         #sample
         #sample = choice(data, size, w_t)
-        ch = np.random.choice([x for x in range(data.shape[0])], size, [1 for x in range(data.shape[0])])
+        ch = np.random.choice([x for x in range(data.shape[0])], size=self.size, p=w_t)
         
         sample = data[ch,:]
         
-        w_t_sample = sample[:,-1]
+    
         y_sample = sample[:,-2]
         X_sample = sample[:,:-2]
         
-        return X_sample, y_sample, w_t_sample
-      
+        return X_sample, y_sample
     
     
-    def metrics_adaboost(self,y, y_pred):
-        """
-        """
-        accuracy = np.sum([1 if y[i] == y_pred[i] else 0 for i in range(y.shape[0])])/ y.shape[0]
+#-------------------------------Multiclass LASSIFICATIONS ---------------------- #
+
+
+class MultiClassAdaBoost(object):
+    '''
+    Parameters
+    -----------
+    base_estimator: object
+        The base model from which the boosted ensemble is built.
+    n_estimators: integer, optional(default=50)
+        The maximum number of estimators
+    learning_rate: float, optional(default=1)
+    Attributes
+    -------------
+    estimators_: list of base estimators
+    estimator_weights_: array of floats
+        Weights for each base_estimator
+    estimator_errors_: array of floats
+        Classification error for each estimator in the boosted ensemble.
+    '''
+
+    def __init__(self, n_estimators, learning_rate):
+        self.n_estimators = n_estimators
+        self.list_WL = [] #list with model
+        self.list_alpha = [] #list with weight of model 
+        self.learning_rate_ = learning_rate
+        self.estimator_errors = []
+        self.w = []
+
+    def fit(self, X, y):
         
-        #error = 1 - np.sum((y - y_pred)**2)/y.shape[0]
+        ## Step 1: Initialize the weights to a constant
+        n_samples = X.shape[0]                
+        self.list_WL = [] #list with model
+        self.list_alpha = [] #list with weight of model 
+        self.estimator_errors = []
+        self.w = []
+
+        ##Weights are initialized to 1/Number of samples: 
+        w_t = np.array([1/n_samples for x in range(n_samples)])
         
-        return accuracy
+        # So in boost we have to ensure that the predict results have the same classes sort
+        self.classes_ = np.array(sorted(list(set(y))))
+        self.n_classes_ = len(self.classes_)
+        
+        
+        ## Step 2: Classify with ramdom sampling of data using a weak learner
+        #Construction des weaklearner
+        
+        #for each weak learner
+        for t in range(self.n_estimators):
+          
+            #Choose and Call the Base/Weak learner
+            #A decision tree with one depth has one node and is called a stump or weak learner
+            WL = DecisionTreeClassifier(max_depth=1)
+            #Fit the stump model with the ramdom samples
+            WL.fit(X, y, sample_weight=w_t)
+            
+            y_pred = WL.predict(X)
+            
+            ##Step 3: Compute error of weak learner
+            incorrect = y_pred != y
+            estimator_error = np.dot(incorrect, w_t) / np.sum(w_t, axis=0)
+            
+            # if worse than random guess, stop boosting
+            if estimator_error >= 1 - 1 / self.n_classes_:
+                break
+
+            # update alphe performance
+            alpha_t = self.learning_rate_ * np.log((1 - estimator_error) / estimator_error) + np.log(
+            self.n_classes_ - 1)
+        
+
+            # update sample weight
+            w_t *= np.exp(alpha_t * incorrect)
+            sample_weight_sum = np.sum(w_t, axis=0)
+
+            # normalize sample weight
+            w_t /= sample_weight_sum
+            
+            #store the alpha performance of each weak learner
+            self.list_alpha.append(alpha_t)
+            #store each weak learner
+            self.list_WL.append(WL)
+            # append error
+            self.estimator_errors.append(estimator_error)
+
+        return self
+
+
+    def predict(self, X):
+        n_classes = self.n_classes_
+        classes = self.classes_[:, np.newaxis]
+
+        
+        pred = sum((estimator.predict(X) == classes).T * w
+                   for estimator, w in zip(self.list_WL,
+                                           self.list_alpha))
+
+        pred /= sum(self.list_alpha)
+        if n_classes == 2:
+            pred[:, 0] *= -1
+            pred = pred.sum(axis=1)
+            return self.classes_.take(pred > 0, axis=0)
+
+        return self.classes_.take(np.argmax(pred, axis=1), axis=0)

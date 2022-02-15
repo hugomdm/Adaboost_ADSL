@@ -1,6 +1,7 @@
 import Adaboost
 
 from sklearn.datasets import load_breast_cancer
+from sklearn.metrics import accuracy_score
 
 data = load_breast_cancer()
 
@@ -21,3 +22,4 @@ error = ada.metrics_adaboost(y, y_pred)
 
 
 
+accuracy_score(y, y_pred)
