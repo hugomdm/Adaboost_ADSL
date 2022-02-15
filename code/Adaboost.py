@@ -163,8 +163,8 @@ class BinaryClassAdaboost():
         sample = data[ch,:]
         
     
-        y_sample = sample[:,-2]
-        X_sample = sample[:,:-2]
+        y_sample = sample[:,-1]
+        X_sample = sample[:,:-1]
         
         return X_sample, y_sample
     
