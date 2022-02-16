@@ -42,7 +42,10 @@ ada.fit(X_train, y_train)
 y_pred = ada.predict(X_test)
 
 plt.figure(figsize=(8,6))
-plt.errorbar(list(range(0, len(ada.estimator_errors))), ada.estimator_errors)
+plt.plot(list(range(0, len(ada.estimator_errors))), ada.estimator_errors)
+plt.title("")
+plt.xlabel('Number of estimators')
+plt.ylabel('ylabel')
 plt.savefig('../img/my_ada_error_'+str(args.data)+'.png')
 
 estimator = AdaBoostClassifier(n_estimators=100)
@@ -60,11 +63,6 @@ print(error)
 results = models_evaluation.models_comparision(args.data, X, y, folds = 10)
 print(results)
 
-print("---------------- Testing different max depth parameters ---------------- ")
-value = models_evaluation.changing_parameter_max_depth(args.data, X, y)
-print("Best max_depth value is : " + str(value))
-
-print("---------------- Testing different number of estimators ---------------- ")
-
-value = models_evaluation.changing_parameter_estimators(args.data, X, y)
-print("Best number of estimator is : " + str(value))
+print("---------------- Testing different max depth and number of estimator parameters ---------------- ")
+value = models_evaluation.changing_parameters(args.data, X, y)
+print("Best parameters value is : " + str(value))

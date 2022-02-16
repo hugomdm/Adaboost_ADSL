@@ -3,6 +3,9 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from tqdm import tqdm
+import matplotlib.ticker as ticker
+
 
 from sklearn.model_selection import cross_validate
 from sklearn.linear_model import LogisticRegression
@@ -77,44 +80,33 @@ def models_comparision(data_type:str, X, y, folds):
     # Return models performance metrics scores data frame
     return models_scores_table
 
-def changing_parameter_max_depth(data_type:str, X, y):
+def changing_parameters(data_type:str, X, y):
 
-    results = list()
-    for i in range(1,11):
-		# define base model
-        if data_type == 'binary': 
-            model = Adaboost.BinaryClassAdaboost(50,max_depth= i)
-        if data_type == 'multiclass': 
-            model = Adaboost.MultiClassAdaBoost(50, max_depth=i)
+    results, names = list(), list()
+    n_estimators = [50,100, 200,400,600,800,1000]
+    #n_estimators = [50,200]
+    for i in tqdm(range(1,3)):
+        for j in n_estimators:
+            # define base model
+            if data_type == 'binary': 
+                model = Adaboost.BinaryClassAdaboost(j,max_depth= i)
+            if data_type == 'multiclass': 
+                model = Adaboost.MultiClassAdaBoost(j, max_depth=i)
 
-        #evaluate the model and collect the results
-        scores = cross_validate(model, X, y, cv=10, scoring='accuracy') 
-        results.append(np.mean(scores['test_score']))
+            #evaluate the model and collect the results
+            scores = cross_validate(model, X, y, cv=10, scoring='accuracy') 
+            results.append(np.mean(scores['test_score']))
+            names.append("M_D: " + str(i)+ "\n N_E: " +str(j) )
 
-    plt.figure(figsize=(8,6))
-    plt.errorbar(list(range(0, len(results))), results)
-    plt.savefig('../img/max_depth_'+str(data_type)+'.png')
-    print("Max depth parameter - Plot was saved in imgs folder")
-    return np.argmax(results)
+    x = list(range(0, len(results)))
 
-def changing_parameter_estimators(data_type:str, X, y):
-
-    results = list()
-    n_estimators = [50,100,150,200,400, 500, 700, 1000]
-    for i in n_estimators:
-		# define base model
-        if data_type == 'binary': 
-            model = Adaboost.BinaryClassAdaboost(i)
-        if data_type == 'multiclass': 
-            model = Adaboost.MultiClassAdaBoost(i)
-
-        #evaluate the model and collect the results
-        scores = cross_validate(model, X, y, cv=10, scoring='accuracy') 
-        results.append(np.mean(scores['test_score']))
-    
-    plt.figure(figsize=(8,6))
-    plt.errorbar(n_estimators, results)
-    plt.savefig('../img/estimators_'+str(data_type)+'.png')
-    print("Number of estimator parameter - Plot was saved in imgs folder")
-
-    return n_estimators[np.argmax(results)]
+    fig, ax = plt.subplots(figsize=(11,7))
+    ax.plot(x, results,  linewidth=2)
+    ax.set_xticks(x)
+    ax.set_xticklabels(names, rotation=45)
+    ax.set(title='Testing different parameters', ylabel='Accuracy', xlabel='Parameters')
+    #ax.xaxis.set_major_locator(ticker.MaxNLocator(12))
+    ax.axvline(x=np.argmax(results),color='red', zorder=2)
+    fig.savefig('../img/parameters_'+str(data_type)+'.png')
+    print("Choosing the best parameters - Plot was saved in imgs folder")
+    return names[np.argmax(results)]
