@@ -35,7 +35,7 @@ def split_data(data_type:str):
 
         ax.bar_label(container=ax.containers[0], labels=lbls)
         ax.set_xlabel('Heart Disease')
-        plt.savefig('../img/dist_heart.png')
+        plt.savefig('../img/dist_heart.png', bbox_inches='tight')
 
         features = df_heart.loc[:, :'ST_Slope']
         tsne = TSNE(n_components=2, random_state=0)
@@ -43,8 +43,13 @@ def split_data(data_type:str):
 
         fig = px.scatter(
             projections, x=0, y=1,
-            color=df_heart.HeartDisease, labels={'color': 'HeartDisease'}
+            color=df_heart.HeartDisease, labels={'color': 'Target'},
+            color_continuous_scale=px.colors.sequential.Viridis
         )
+        fig.update_layout(
+            margin=dict(l=5, r=5, t=20, b=20),
+        )
+
         fig.write_image("../img/tnse_heart.png")
 
 
@@ -71,8 +76,21 @@ def split_data(data_type:str):
 
         X = data.drop('Target', axis=1)
         y = np.array(data['Target'])
-        print(y)
+
         under = RandomUnderSampler()
         X, y = under.fit_resample(X, y)
+
+        tsne = TSNE(n_components=2, random_state=0)
+        projections = tsne.fit_transform(X)
+
+        fig = px.scatter(
+            projections, x=0, y=1,
+            color=y, labels={'color':'Target'}, 
+            color_continuous_scale=px.colors.sequential.Viridis
+        )
+        fig.update_layout(
+        margin=dict(l=5, r=5, t=20, b=20),
+        )
+        fig.write_image("../img/tnse_tyroid.png")
 
     return X, y

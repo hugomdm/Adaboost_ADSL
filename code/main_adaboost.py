@@ -3,23 +3,16 @@
 import sys
 import argparse
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, mean_squared_error
+
 import warnings
 warnings.filterwarnings("ignore")
-import matplotlib.pyplot as plt
-from sklearn.ensemble import AdaBoostClassifier
-from sklearn.metrics import confusion_matrix
+
 
 #----------- external imports 
 import Adaboost
 import data_processing
-import models_evaluation
+import model_experiments
 
-#from sklearn.datasets import load_breast_cancer
-#data = load_breast_cancer()
-#X = data.data
-#y = data.target
 
 arg = sys.argv[1:]
 parser = argparse.ArgumentParser(description="Parse command line arguments.")
@@ -30,43 +23,31 @@ args = parser.parse_args(arg)
 
 X, y = data_processing.split_data(args.data)
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, stratify=y)
-
-if args.data == 'binary': 
-    ada = Adaboost.BinaryClassAdaboost(100)
-
-if args.data == 'multiclass': 
-    ada = Adaboost.MultiClassAdaBoost(100)
-    
-
-ada.fit(X_train, y_train)
-y_pred = ada.predict(X_test)
-
-plt.figure(figsize=(8,6))
-plt.plot(list(range(0, len(ada.estimator_errors))), ada.estimator_errors)
-plt.title("")
-plt.xlabel('Number of estimators')
-plt.ylabel('ylabel')
-plt.savefig('../img/my_ada_error_'+str(args.data)+'.png')
-
-estimator = AdaBoostClassifier(n_estimators=100)
-estimator.fit(X_train, y_train)
-y_pred = estimator.predict(X_test)
-
-plt.figure(figsize=(8,6))
-plt.errorbar(list(range(0, len(estimator.estimator_errors_ ))), estimator.estimator_errors_ )
-plt.savefig('../img/ada_error_'+str(args.data)+'.png')
-
-error = accuracy_score(y_test, y_pred)
-confusion = confusion_matrix(y_test, y_pred)
-
-print(error)
-print(confusion)
-
-results = models_evaluation.models_comparision(args.data, X, y, folds = 10)
-print(results)
-
 print("---------------- Testing different max depth and number of estimator parameters ---------------- ")
-params, accuracy = models_evaluation.changing_parameters(args.data, X, y)
+print(" ")
+params, accuracy = model_experiments.changing_parameters(args.data, X, y)
 print("Best parameters value is : " + str(params))
 print("Best accuracy value is : " + str(accuracy))
+
+print("---------------- Comparing with different models ---------------- ")
+
+if args.data == 'binary': 
+    my_ada_model = Adaboost.BinaryClassAdaboost(600, 1)
+
+if args.data == 'multiclass': 
+    my_ada_model = Adaboost.MultiClassAdaBoost(50, 2)
+results = model_experiments.models_comparision(my_ada_model, X, y, folds = 10)
+print(results)
+
+print(" ")
+print("---------------- Comparing our adaboost with Adaboost from Sklearn  ---------------- ")
+my_classification, my_confusion, sklearn_classification, sklearn_confusion = model_experiments.comparing_adaboost_sklearn(my_ada_model, X, y)
+
+print("Our results : " + str(my_classification))
+print("Our confusion matrix : " + str(my_confusion))
+print("Sklearn results : " + str(sklearn_classification))
+print("Sklearn confusion matrix : " + str(sklearn_confusion))
+
+
+
+
