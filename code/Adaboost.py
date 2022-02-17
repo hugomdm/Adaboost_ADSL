@@ -217,6 +217,7 @@ class MultiClassAdaBoost():
         self.estimator_errors = []
         self.w = []
 
+        y = np.array(y)
         ##Weights are initialized to 1/Number of samples: 
         w_t = np.array([1/n_samples for x in range(n_samples)])
         

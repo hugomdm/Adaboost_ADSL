@@ -11,7 +11,7 @@ from sklearn.model_selection import cross_validate
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
-
+from sklearn.tree import DecisionTreeClassifier
 #----------- external imports 
 import Adaboost
 
@@ -30,12 +30,12 @@ def models_comparision(data_type:str, X, y, folds):
     # Instantiate the machine learning classifiers
     log_model = LogisticRegression(max_iter=10000)
     svc_model = LinearSVC(dual=False)
-    rfc_model = RandomForestClassifier()
-    ada_model = AdaBoostClassifier()
+    rfc_model = DecisionTreeClassifier()
+    ada_model = AdaBoostClassifier(DecisionTreeClassifier( max_depth=2), n_estimators=50)
     if data_type == 'binary': 
         my_ada_model = Adaboost.BinaryClassAdaboost(50)
     if data_type == 'multiclass': 
-        my_ada_model = Adaboost.MultiClassAdaBoost(50)
+        my_ada_model = Adaboost.MultiClassAdaBoost(50, 2)
 
     # Perform cross-validation to each machine learning classifier
     log = cross_validate(log_model, X, y, cv=folds, scoring=scores)
@@ -83,7 +83,7 @@ def models_comparision(data_type:str, X, y, folds):
 def changing_parameters(data_type:str, X, y):
 
     results, names = list(), list()
-    n_estimators = [50,100, 200,400,600,800,1000]
+    n_estimators = [50,100,200,400,600,800,1000]
     #n_estimators = [50,200]
     for i in tqdm(range(1,3)):
         for j in n_estimators:
@@ -99,14 +99,14 @@ def changing_parameters(data_type:str, X, y):
             names.append("M_D: " + str(i)+ "\n N_E: " +str(j) )
 
     x = list(range(0, len(results)))
-
+    plt.style.use('seaborn')
     fig, ax = plt.subplots(figsize=(11,7))
-    ax.plot(x, results,  linewidth=2)
+    ax.plot(x, results,  linewidth=3)
     ax.set_xticks(x)
     ax.set_xticklabels(names, rotation=45)
     ax.set(title='Testing different parameters', ylabel='Accuracy', xlabel='Parameters')
     #ax.xaxis.set_major_locator(ticker.MaxNLocator(12))
-    ax.axvline(x=np.argmax(results),color='red', zorder=2)
+    ax.axvline(x=np.argmax(results), color='red', zorder=2)
     fig.savefig('../img/parameters_'+str(data_type)+'.png')
     print("Choosing the best parameters - Plot was saved in imgs folder")
-    return names[np.argmax(results)]
+    return names[np.argmax(results)], max(results)

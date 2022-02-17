@@ -9,6 +9,7 @@ import warnings
 warnings.filterwarnings("ignore")
 import matplotlib.pyplot as plt
 from sklearn.ensemble import AdaBoostClassifier
+from sklearn.metrics import confusion_matrix
 
 #----------- external imports 
 import Adaboost
@@ -29,7 +30,7 @@ args = parser.parse_args(arg)
 
 X, y = data_processing.split_data(args.data)
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, stratify=y)
 
 if args.data == 'binary': 
     ada = Adaboost.BinaryClassAdaboost(100)
@@ -57,12 +58,15 @@ plt.errorbar(list(range(0, len(estimator.estimator_errors_ ))), estimator.estima
 plt.savefig('../img/ada_error_'+str(args.data)+'.png')
 
 error = accuracy_score(y_test, y_pred)
-print(error)
+confusion = confusion_matrix(y_test, y_pred)
 
+print(error)
+print(confusion)
 
 results = models_evaluation.models_comparision(args.data, X, y, folds = 10)
 print(results)
 
 print("---------------- Testing different max depth and number of estimator parameters ---------------- ")
-value = models_evaluation.changing_parameters(args.data, X, y)
-print("Best parameters value is : " + str(value))
+params, accuracy = models_evaluation.changing_parameters(args.data, X, y)
+print("Best parameters value is : " + str(params))
+print("Best accuracy value is : " + str(accuracy))

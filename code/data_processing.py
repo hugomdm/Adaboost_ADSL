@@ -6,8 +6,9 @@ from sklearn.preprocessing import LabelEncoder
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
-from sklearn.datasets import load_iris
 import plotly.express as px
+from imblearn.under_sampling import RandomUnderSampler
+
 #----------- external imports 
 
 
@@ -53,9 +54,25 @@ def split_data(data_type:str):
         y = np.where(y==0,-1,1)
 
     if data_type == 'multiclass': 
-        data = load_iris()
+        data_train = pd.read_excel("data/ann-train.xlsx", header=None)
+        data_test = pd.read_excel("data/ann-test.xlsx", header=None)
 
-        X = data.data
-        y = data.target
+        columns = ['age', 'sex','on_thyroxine','query_on_thyroxine','on_antithyroid_medication','sick', \
+           'pregnant','thyroid_surgery','I131_treatment', \
+           'query_hypothyroid','query_hyperthyroid', 'lithium', 'goitre', \
+            'tumor','hypopituitary', 'psych', 'TSH', 'T3', 'TTT4', 'T4U', 'FTI', 'Target']
+        data_train.columns = columns
+        data_test.columns = columns
+        data = pd.concat([data_train, data_test], ignore_index=True, sort=False)
+
+        le=LabelEncoder()
+
+        data['Target']=le.fit_transform(data['Target'])
+
+        X = data.drop('Target', axis=1)
+        y = np.array(data['Target'])
+        print(y)
+        under = RandomUnderSampler()
+        X, y = under.fit_resample(X, y)
 
     return X, y
