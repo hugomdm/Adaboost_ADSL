@@ -183,6 +183,7 @@ class BinaryClassAdaboost():
             self.list_alpha.append(alpha_t)
             #store each weak learner
             self.list_WL.append(WL)
+            #store the errors for this weak learners training
             self.estimator_errors.append(eps)
 
         return self
@@ -205,7 +206,6 @@ class BinaryClassAdaboost():
             list_y_pred.append(WL.predict(X) * alpha)
          
         #the array of all the predictions
-
         arr_y_pred = np.array(sum(list_y_pred))
  
         #get -1 if y_pred < 0 or 1 if y_pred > 0
@@ -263,7 +263,7 @@ class BinaryClassAdaboost():
         
         sample = data[ch,:]
         
-    
+        #sample data
         y_sample = sample[:,-1]
         X_sample = sample[:,:-1]
         

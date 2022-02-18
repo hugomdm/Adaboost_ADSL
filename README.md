@@ -4,7 +4,7 @@
 
 ## Projet Description: 
 
-This code was made for the Advanced Supervised Learning projet for the Data Mining Master 2021. 
+This code was made for the Advanced Supervised Learning projet for the Mastet Data Mining of University Lyon 2 in 2021. 
 The code has the implementation of an Binary and MultiClass Adaboost referenced from the pseudocodes of Freund et al 1997. 
 This code also has some experiments to compare the algorithm coded with other machine learning models, with the standard
 scikit learn library and some tuning parameters. 
@@ -19,9 +19,9 @@ We have set some standard datasets for each problem.
 
 Exemples: 
 - For a binary problem run:
-    > python main.py -d binary
+    >  python .\main.py -d binary
 - For a multiclass problem run:
-    > python main.py -d multiclass
+    >  python .\main.py -d multiclass
 
 Credits: 
 This work was made by Lia Furtado, Hugo Vinsion and Dorian Lamothe
