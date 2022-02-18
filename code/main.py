@@ -2,8 +2,6 @@
 #------ lib packages 
 import sys
 import argparse
-import numpy as np
-
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -14,6 +12,10 @@ import data_processing
 import model_experiments
 
 
+"""Main file that starts the work flow by calling all the other functions"""
+
+
+#--------- Get from command line the arguments for a binary or multiclass problem ------------ #
 arg = sys.argv[1:]
 parser = argparse.ArgumentParser(description="Parse command line arguments.")
 parser.add_argument("-d", "--data", type=str, required=True,
@@ -21,7 +23,18 @@ parser.add_argument("-d", "--data", type=str, required=True,
 
 args = parser.parse_args(arg)
 
-X, y = data_processing.split_data(args.data)
+print("---------------- Pre-processing the data choosen ---------------- ")
+
+if args.data == 'binary': 
+
+    X, y = data_processing.process_data_binary()
+    my_ada_model = Adaboost.BinaryClassAdaboost(600, 1)
+
+elif args.data == 'multiclass': 
+
+    X, y = data_processing.process_data_multiclass()
+    my_ada_model = Adaboost.MultiClassAdaBoost(50, 2)
+
 
 print("---------------- Testing different max depth and number of estimator parameters ---------------- ")
 print(" ")
@@ -31,11 +44,6 @@ print("Best accuracy value is : " + str(accuracy))
 
 print("---------------- Comparing with different models ---------------- ")
 
-if args.data == 'binary': 
-    my_ada_model = Adaboost.BinaryClassAdaboost(600, 1)
-
-if args.data == 'multiclass': 
-    my_ada_model = Adaboost.MultiClassAdaBoost(50, 2)
 results = model_experiments.models_comparision(my_ada_model, X, y, folds = 10)
 print(results)
 

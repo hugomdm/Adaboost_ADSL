@@ -6,10 +6,8 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 
-from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_predict
 from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, mean_squared_error
 from sklearn.model_selection import cross_validate
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
@@ -99,20 +97,22 @@ def changing_parameters(data_type, X, y):
 
     x = list(range(0, len(results)))
     plt.style.use('seaborn')
-    fig, ax = plt.subplots(figsize=(11,7), frameon=False)
+    fig, ax = plt.subplots(figsize=(8,7))
     ax.plot(x, results,  linewidth=3)
     ax.set_xticks(x)
-    ax.set_xticklabels(names, rotation=45)
-    ax.set(title='Testing different parameters', ylabel='Accuracy', xlabel='Parameters')
+    ax.set_xticklabels(names, rotation=90, fontsize=14)
+    ax.set_title('Testing different parameters',fontsize= 16) # title of plot
+    ax.set_xlabel('Parameters',fontsize = 15) #xlabel
+    ax.set_ylabel('Accuracy', fontsize = 15)#ylabel
+    ax.tick_params(axis='y', labelsize=14)
     ax.axvline(x=np.argmax(results), color='red', zorder=2)
+    fig.tight_layout()
     fig.savefig('../img/parameters_'+str(data_type)+'.png')
     print("Choosing the best parameters - Plot was saved in imgs folder")
     return names[np.argmax(results)], max(results)
 
 
 def comparing_adaboost_sklearn(my_ada_model, X, y):
-
-
 
     y_pred = cross_val_predict(my_ada_model, X, y, cv=10)
     my_classification = classification_report(y, y_pred)
