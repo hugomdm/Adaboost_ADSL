@@ -1,7 +1,6 @@
 ## Projet Title: 
 
 ### Adaboost_ADSL
-
 ## Projet Description: 
 
 This code was made for the Advanced Supervised Learning projet for the Mastet Data Mining of University Lyon 2 in 2021. 
@@ -25,3 +24,5 @@ Exemples:
 
 Credits: 
 This work was made by Lia Furtado, Hugo Vinson and Dorian Lamothe
+Repository:
+https://github.com/hugomdm/Adaboost_ADSL
