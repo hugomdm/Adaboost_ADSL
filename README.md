@@ -24,8 +24,4 @@ Exemples:
     >  python .\main.py -d multiclass
 
 Credits: 
-This work was made by Lia Furtado, Hugo Vinsion and Dorian Lamothe
-
-Useful links:
-
-Lien OverLeaf : https://www.overleaf.com/2219845112hhgqxgzrzcgf
+This work was made by Lia Furtado, Hugo Vinson and Dorian Lamothe
